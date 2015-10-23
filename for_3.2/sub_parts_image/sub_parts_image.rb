@@ -7,10 +7,12 @@ require 'cairo'
 Plugin.create :sub_parts_image do
   UserConfig[:subparts_image_tp] ||= 100
   UserConfig[:subparts_image_round] ||= 10
+  UserConfig[:subparts_image_max_height] ||= 400
 
   settings "インライン画像表示" do
     adjustment("濃さ(%)", :subparts_image_tp, 0, 100)
     adjustment("角を丸くする", :subparts_image_round, 0, 200)
+    adjustment("画像の最大縦幅(px)", :subparts_image_max_height, 0, 10000)
   end
 
   defimageopener('youtube thumbnail (shrinked)', /^http:\/\/youtu.be\/([^\?\/\#]+)/) do |url|
@@ -111,7 +113,8 @@ Plugin.create :sub_parts_image do
     # ==== Return
     # Gdk::Rectangle その画像を描画する場所
     def image_draw_area(pos, canvas_width)
-      width = canvas_width / @main_icons.length
+      max_width = UserConfig[:subparts_image_max_height] * Rational(16, 9)
+      width = [canvas_width / @main_icons.length, max_width].min
       height = width / Rational(16, 9)
       x = width * pos
       y = 0
