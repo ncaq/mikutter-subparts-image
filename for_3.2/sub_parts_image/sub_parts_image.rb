@@ -59,37 +59,21 @@ Plugin.create :sub_parts_image do
       if urls.length == 0
         return
       end
-
       helper.reset_height
-
-      if !helper.destroyed?
-        # クリックイベント
-        @ignore_event = false
-
-        helper.ssc(:click) { |this, e, x, y|
+      helper.ssc(:click) { |this, e, x, y|
+        if e.button == 1        # 左クリック
           # クリック位置の特定
-          offset = helper.mainpart_height
-
-          helper.subparts.each { |part|
-            if part == self
-              break
-            end
-
-            offset += part.height
-          }
-
-          clicked_url, = urls.lazy.with_index.map{|url, pos|
+          offset = helper.mainpart_height +
+                   helper.subparts.take_while { |part| part != self }.map(&:height).inject(0, :+)
+          clicked_url, = urls.lazy.with_index.find { |url, pos|
             rect = image_draw_area(pos, self.width)
-            [url, rect.x ... rect.x+rect.width, rect.y+offset ... rect.y+offset+rect.height]
-          }.find{|url, xrange, yrange|
-            xrange.include?(x) and yrange.include?(y) }
-          case e.button
-          when 1
-            Plugin.call(:openimg_open, clicked_url) if clicked_url
-          end
-
-        }
-      end
+            xrange = rect.x          ... rect.x + rect.width
+            yrange = rect.y + offset ... rect.y + rect.height + offset
+            xrange.cover?(x) && yrange.cover?(y)
+          }
+          Plugin.call(:openimg_open, clicked_url) if clicked_url
+        end
+      }
     end
 
     # コンストラクタ
