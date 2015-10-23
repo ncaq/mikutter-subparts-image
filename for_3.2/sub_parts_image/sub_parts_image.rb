@@ -66,7 +66,7 @@ Plugin.create :sub_parts_image do
         # イメージ読み込みスレッドを起こす
         Thread.new(helper.message) { |message|
           urls = message.entity
-                 .select{ |entity| %i<urls media>.include? entity[:slug] }
+                 .select { |entity| %i<urls media>.include? entity[:slug] }
                  .map { |entity|
             case entity[:slug]
             when :urls
@@ -76,27 +76,23 @@ Plugin.create :sub_parts_image do
             end
           } + Array(message[:subparts_images])
 
-          streams = urls.map{ |url| Plugin.filtering(:openimg_raw_image_from_display_url, url, nil) }
-                    .select{ |pair| pair.last }
+          streams = urls.map { |url|
+            Plugin.filtering(:openimg_raw_image_from_display_url, url, nil)
+          }.select(&:last)
 
-          Delayer.new{ on_image_information streams.map(&:first) }
+          Delayer.new { on_image_information(streams.map(&:first)) }
 
-          streams.each.with_index do |pair, index|
-            _, stream = *pair
+          streams.each.with_index { |(_, stream), index|
             Thread.new {
               pixbuf = Gdk::PixbufLoader.open{ |loader|
                 loader.write(stream.read)
                 stream.close
               }.pixbuf
 
-              Delayer.new {
-                on_image_loaded(index, pixbuf)
-              }
-            }.trap{ |exception|
-              error exception
+              Delayer.new { on_image_loaded(index, pixbuf) }
             }
-          end
-        }.trap{ |exception| error exception }
+          }
+        }
       end
     end
 
