@@ -31,27 +31,8 @@ Plugin.create :sub_parts_image do
 
     # イメージ取得完了
     def on_image_loaded(pos, pixbuf)
-      # puts "#{@helper_message[0..10]} image loaded start #{pos}"
-
-      if !helper.destroyed?
-        # 再描画イベント
-        sid = helper.ssc(:expose_event, helper) {
-          # サブパーツ描画
-          helper.on_modify
-          helper.signal_handler_disconnect(sid)
-          false
-        }
-      end
-
-      # サブパーツ描画
+      # 画像を保存
       @main_icons[pos] = pixbuf
-
-      # puts "#{@helper_message[0..10]} draw ready #{pos}"
-
-      Delayer.new {
-        # puts "#{@helper_message[0..10]} draw image #{pos}"
-        helper.on_modify
-      }
     end
 
     # 画像URLが解決したタイミング
