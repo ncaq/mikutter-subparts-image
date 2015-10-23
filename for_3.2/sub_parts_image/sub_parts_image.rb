@@ -46,7 +46,7 @@ Plugin.create :sub_parts_image do
           # クリック位置の特定
           offset = helper.mainpart_height +
                    helper.subparts.take_while { |part| part != self }.map(&:height).inject(0, :+)
-          clicked_url, = urls.lazy.with_index.find { |url, pos|
+          clicked_url, = urls.find.with_index { |url, pos|
             rect = image_draw_area(pos, self.width)
             xrange = rect.x          ... rect.x + rect.width
             yrange = rect.y + offset ... rect.y + rect.height + offset
