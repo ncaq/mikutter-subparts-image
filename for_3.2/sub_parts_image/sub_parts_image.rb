@@ -5,6 +5,14 @@ require 'gtk2'
 require 'cairo'
 
 Plugin.create :sub_parts_image do
+  UserConfig[:subparts_image_tp] ||= 100
+  UserConfig[:subparts_image_round] ||= 10
+
+  settings "インライン画像表示" do
+    adjustment("濃さ(%)", :subparts_image_tp, 0, 100)
+    adjustment("角を丸くする", :subparts_image_round, 0, 200)
+  end
+
   defimageopener('youtube thumbnail (shrinked)', /^http:\/\/youtu.be\/([^\?\/\#]+)/) do |url|
     /^http:\/\/youtu.be\/([^\?\/\#]+)/.match(url)
     open("http://img.youtube.com/vi/#{$1}/0.jpg")
@@ -119,9 +127,16 @@ Plugin.create :sub_parts_image do
         scale = [wscale, hscale].min # アスペクト比を保ち,はみ出さない範囲のスケール
         icon = icon.scale(icon.width * scale, icon.height * scale)
         context.save {
-          context.translate(draw_rect.x, draw_rect.y)
           context.set_source_pixbuf(icon)
-          context.paint
+          context.clip {
+            round = Rational(UserConfig[:subparts_image_round], scale)
+            context.rounded_rectangle(draw_rect.x,
+                                      draw_rect.y,
+                                      [draw_rect.width,  icon.width ].min,
+                                      [draw_rect.height, icon.height].min,
+                                      round)
+          }
+          context.paint(UserConfig[:subparts_image_tp] / 100.0)
         }
       }
     end
