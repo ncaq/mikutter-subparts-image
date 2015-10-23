@@ -5,17 +5,6 @@ require 'gtk2'
 require 'cairo'
 
 Plugin.create :sub_parts_image do
-  UserConfig[:subparts_image_tp] ||= 100
-  UserConfig[:subparts_image_round] ||= 10
-  UserConfig[:subparts_image_margin] ||= 2
-
-  settings "インライン画像表示" do
-    adjustment("濃さ(%)", :subparts_image_tp, 0, 100)
-    adjustment("角を丸くする", :subparts_image_round, 0, 200)
-    adjustment("マージン(px)", :subparts_image_margin, 0, 12)
-  end
-
-
   defimageopener('youtube thumbnail (shrinked)', /^http:\/\/youtu.be\/([^\?\/\#]+)/) do |url|
     /^http:\/\/youtu.be\/([^\?\/\#]+)/.match(url)
     open("http://img.youtube.com/vi/#{$1}/0.jpg")
@@ -35,7 +24,6 @@ Plugin.create :sub_parts_image do
     /nicovideo\.jp\/watch\/sm([0-9]+)/.match(url)
     open("http://tn-skr#{($1.to_i % 4) + 1}.smilevideo.jp/smile?i=#{$1}")
   end
-
 
   # サブパーツ
   class Gdk::SubPartsImage < Gdk::SubParts
@@ -133,13 +121,13 @@ Plugin.create :sub_parts_image do
           urls = message.entity
                  .select{ |entity| %i<urls media>.include? entity[:slug] }
                  .map { |entity|
-                   case entity[:slug]
-                   when :urls
-                     entity[:expanded_url]
-                   when :media
-                     entity[:media_url]
-                   end
-                 } + Array(message[:subparts_images])
+            case entity[:slug]
+            when :urls
+              entity[:expanded_url]
+            when :media
+              entity[:media_url]
+            end
+          } + Array(message[:subparts_images])
 
           streams = urls.map{ |url| Plugin.filtering(:openimg_raw_image_from_display_url, url, nil) }
                     .select{ |pair| pair.last }
@@ -221,28 +209,8 @@ Plugin.create :sub_parts_image do
       else
         width = canvas_width / 2
         height = 1 / aspect_ratio(pos) * width
-        Gdk::Rectangle.new(width * (pos % 2), (height + UserConfig[:subparts_image_margin]) * (pos / 2).floor, width, height)
+        Gdk::Rectangle.new(width * (pos % 2), height * (pos / 2).floor, width, height)
       end
-    end
-
-    # rectをマージンぶんだけ縮小する。
-    # マージンを取ることでrectのサイズが0以下になる場合は、マージンを開けずに返す
-    # ==== Args
-    # [rect] Gdk::Rectangle 縮小する前の領域
-    # [margin] マージン(px)
-    # ==== Return
-    # Gdk::Rectangle 縮小した領域
-    def add_margin(rect, margin)
-      result = rect.dup
-      if rect.width > margin * 2
-        result.x += margin
-        result.width -= margin * 2
-      end
-      if rect.height > margin * 2
-        result.y += margin
-        result.height -= margin * 2
-      end
-      result
     end
 
     # 画像を切り抜くさい、どこを切り抜くかを返す
@@ -271,11 +239,11 @@ Plugin.create :sub_parts_image do
       @main_icons.compact.map.with_index { |icon, pos|
         draw_rect = image_draw_area(pos, self.width)
         crop_rect = image_crop_area(pos, icon, draw_rect)
-        [icon, add_margin(draw_rect, UserConfig[:subparts_image_margin]), crop_rect]
+        [icon, draw_rect, crop_rect]
       }.each { |icon, draw_rect, crop_rect|
         context.save {
           scale_x = Rational(draw_rect.width, crop_rect.width)
-          scale_y = Rational(draw_rect.height, crop_rect.height) 
+          scale_y = Rational(draw_rect.height, crop_rect.height)
 
           context.translate(draw_rect.x - (icon.width - crop_rect.width) * scale_x / 2,
                             draw_rect.y - (icon.height - crop_rect.height) * scale_y / 2)
@@ -283,11 +251,10 @@ Plugin.create :sub_parts_image do
           context.set_source_pixbuf(icon)
 
           context.clip {
-            round = Rational(UserConfig[:subparts_image_round], scale_x)
-            context.rounded_rectangle(crop_rect.x, crop_rect.y, crop_rect.width, crop_rect.height, round)
+            context.rounded_rectangle(crop_rect.x, crop_rect.y, crop_rect.width, crop_rect.height, 0)
           }
 
-          context.paint(UserConfig[:subparts_image_tp] / 100.0)
+          context.paint
         }
       }
     end
