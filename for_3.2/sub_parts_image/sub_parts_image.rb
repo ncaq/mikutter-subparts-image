@@ -42,7 +42,6 @@ Plugin.create :sub_parts_image do
       if urls.length == 0
         return
       end
-      helper.reset_height
       helper.ssc(:click) { |this, e, x, y|
         if e.button == 1        # 左クリック
           # クリック位置の特定
@@ -88,6 +87,8 @@ Plugin.create :sub_parts_image do
           }.pixbuf
           @main_icons[index] = pixbuf
         }
+        # 全ての画像の処理が終わったら縦幅を再計算
+        helper.reset_height
       end
     end
 
