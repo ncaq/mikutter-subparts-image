@@ -101,13 +101,17 @@ Plugin.create :sub_parts_image do
       if @main_icons.length == 0 # 0除算の回避
         Gdk::Rectangle.new(0, 0, 0, 0)
       else
-        max_width = UserConfig[:subparts_image_max_height] * Rational(16, 9)
+        max_width = UserConfig[:subparts_image_max_height] * draw_aspect_ratio
         width = [canvas_width / @main_icons.length, max_width].min
-        height = width / Rational(16, 9)
+        height = width / draw_aspect_ratio
         x = width * pos
         y = 0
         Gdk::Rectangle.new(x, y, width, height)
       end
+    end
+
+    def draw_aspect_ratio
+      Rational(16, 9)
     end
 
     # サブパーツを描画
