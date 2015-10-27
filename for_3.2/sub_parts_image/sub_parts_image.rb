@@ -81,7 +81,7 @@ Plugin.create :sub_parts_image do
           offset = helper.mainpart_height +
                    helper.subparts.take_while { |part| part != self }.map(&:height).inject(0, :+)
           clicked_url, = urls.find.with_index { |url, pos|
-            rect = image_draw_area(pos, self.width)
+            rect = image_draw_area(pos)
             xrange = rect.x          ... rect.x + rect.width
             yrange = rect.y + offset ... rect.y + rect.height + offset
             xrange.cover?(x) && yrange.cover?(y)
@@ -94,15 +94,14 @@ Plugin.create :sub_parts_image do
     # 画像を描画する座標とサイズを返す
     # ==== Args
     # [pos] Fixnum 画像インデックス
-    # [canvas_width] Fixnum キャンバスの幅(px)
     # ==== Return
     # Gdk::Rectangle その画像を描画する場所
-    def image_draw_area(pos, canvas_width)
+    def image_draw_area(pos)
       if @main_icons.length == 0 # 0除算の回避
         Gdk::Rectangle.new(0, 0, 0, 0)
       else
         max_width = UserConfig[:subparts_image_max_height] * draw_aspect_ratio
-        width = [canvas_width / @main_icons.length, max_width].min
+        width = [self.width / @main_icons.length, max_width].min
         height = width / draw_aspect_ratio
         x = width * pos
         y = 0
@@ -117,7 +116,7 @@ Plugin.create :sub_parts_image do
     # サブパーツを描画
     def render(context)
       @main_icons.compact.each.with_index { |icon, pos|
-        draw_rect = image_draw_area(pos, self.width)
+        draw_rect = image_draw_area(pos)
         wscale = draw_rect.width.to_f  / icon.width
         hscale = draw_rect.height.to_f / icon.height
         scale = [wscale, hscale].min # アスペクト比を保ち,はみ出さない範囲のスケール
@@ -131,7 +130,7 @@ Plugin.create :sub_parts_image do
     end
 
     def height
-      image_draw_area(0, self.width).height
+      image_draw_area(0).height
     end
   end
 end
