@@ -98,12 +98,16 @@ Plugin.create :sub_parts_image do
     # ==== Return
     # Gdk::Rectangle その画像を描画する場所
     def image_draw_area(pos, canvas_width)
-      max_width = UserConfig[:subparts_image_max_height] * Rational(16, 9)
-      width = [canvas_width / @main_icons.length, max_width].min
-      height = width / Rational(16, 9)
-      x = width * pos
-      y = 0
-      Gdk::Rectangle.new(x, y, width, height)
+      if @main_icons.length == 0 # 0除算の回避
+        Gdk::Rectangle.new(0, 0, 0, 0)
+      else
+        max_width = UserConfig[:subparts_image_max_height] * Rational(16, 9)
+        width = [canvas_width / @main_icons.length, max_width].min
+        height = width / Rational(16, 9)
+        x = width * pos
+        y = 0
+        Gdk::Rectangle.new(x, y, width, height)
+      end
     end
 
     # サブパーツを描画
@@ -123,12 +127,7 @@ Plugin.create :sub_parts_image do
     end
 
     def height
-      if @main_icons.length == 0
-        0
-      else
-        draw_rect = image_draw_area(@main_icons.length - 1, self.width)
-        draw_rect.y + draw_rect.height
-      end
+      image_draw_area(0, self.width).height
     end
   end
 end
