@@ -37,13 +37,7 @@ Plugin.create :sub_parts_image do
   class Gdk::SubPartsImage < Gdk::SubParts
     regist
 
-    # イメージ取得完了
-    def on_image_loaded(pos, pixbuf)
-      # 画像を保存
-      @main_icons[pos] = pixbuf
-    end
-
-    # 画像URLが解決したタイミング
+    # 画像URLが解決したタイミングで起動し,クリックイベントを設定する
     def on_image_information(urls)
       if urls.length == 0
         return
@@ -71,7 +65,7 @@ Plugin.create :sub_parts_image do
       @main_icons = []
 
       if helper.message
-        # イメージ読み込みスレッドを起こす
+        # URLを解決
         urls = helper.message.entity
                .select { |entity| %i<urls media>.include? entity[:slug] }
                .map { |entity|
@@ -82,19 +76,17 @@ Plugin.create :sub_parts_image do
             entity[:media_url]
           end
         } + Array(helper.message[:subparts_images])
-
         streams = urls.map { |url|
           Plugin.filtering(:openimg_raw_image_from_display_url, url, nil)
         }.select(&:last)
-
         on_image_information(streams.map(&:first))
-
+        # 画像を保存
         streams.each.with_index { |(_, stream), index|
           pixbuf = Gdk::PixbufLoader.open{ |loader|
             loader.write(stream.read)
             stream.close
           }.pixbuf
-          on_image_loaded(index, pixbuf)
+          @main_icons[index] = pixbuf
         }
       end
     end
