@@ -37,28 +37,6 @@ Plugin.create :sub_parts_image do
   class Gdk::SubPartsImage < Gdk::SubParts
     regist
 
-    # 画像URLが解決したタイミングで起動し,クリックイベントを設定する
-    def on_image_information(urls)
-      if urls.length == 0
-        return
-      end
-      helper.ssc(:click) { |this, e, x, y|
-        if e.button == 1        # 左クリック
-          # クリック位置の特定
-          offset = helper.mainpart_height +
-                   helper.subparts.take_while { |part| part != self }.map(&:height).inject(0, :+)
-          clicked_url, = urls.find.with_index { |url, pos|
-            rect = image_draw_area(pos, self.width)
-            xrange = rect.x          ... rect.x + rect.width
-            yrange = rect.y + offset ... rect.y + rect.height + offset
-            xrange.cover?(x) && yrange.cover?(y)
-          }
-          Plugin.call(:openimg_open, clicked_url) if clicked_url
-        end
-      }
-    end
-
-    # コンストラクタ
     def initialize(*args)
       super
       @main_icons = []
@@ -90,6 +68,27 @@ Plugin.create :sub_parts_image do
         # 全ての画像の処理が終わったら縦幅を再計算
         helper.reset_height
       end
+    end
+
+    # 画像URLが解決したタイミングで起動し,クリックイベントを設定する
+    def on_image_information(urls)
+      if urls.length == 0
+        return
+      end
+      helper.ssc(:click) { |this, e, x, y|
+        if e.button == 1        # 左クリック
+          # クリック位置の特定
+          offset = helper.mainpart_height +
+                   helper.subparts.take_while { |part| part != self }.map(&:height).inject(0, :+)
+          clicked_url, = urls.find.with_index { |url, pos|
+            rect = image_draw_area(pos, self.width)
+            xrange = rect.x          ... rect.x + rect.width
+            yrange = rect.y + offset ... rect.y + rect.height + offset
+            xrange.cover?(x) && yrange.cover?(y)
+          }
+          Plugin.call(:openimg_open, clicked_url) if clicked_url
+        end
+      }
     end
 
     # 画像を描画する座標とサイズを返す
