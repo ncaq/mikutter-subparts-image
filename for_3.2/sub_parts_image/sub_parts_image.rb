@@ -72,34 +72,29 @@ Plugin.create :sub_parts_image do
 
       if helper.message
         # イメージ読み込みスレッドを起こす
-        Thread.new(helper.message) { |message|
-          urls = message.entity
-                 .select { |entity| %i<urls media>.include? entity[:slug] }
-                 .map { |entity|
-            case entity[:slug]
-            when :urls
-              entity[:expanded_url]
-            when :media
-              entity[:media_url]
-            end
-          } + Array(message[:subparts_images])
+        urls = helper.message.entity
+               .select { |entity| %i<urls media>.include? entity[:slug] }
+               .map { |entity|
+          case entity[:slug]
+          when :urls
+            entity[:expanded_url]
+          when :media
+            entity[:media_url]
+          end
+        } + Array(helper.message[:subparts_images])
 
-          streams = urls.map { |url|
-            Plugin.filtering(:openimg_raw_image_from_display_url, url, nil)
-          }.select(&:last)
+        streams = urls.map { |url|
+          Plugin.filtering(:openimg_raw_image_from_display_url, url, nil)
+        }.select(&:last)
 
-          Delayer.new { on_image_information(streams.map(&:first)) }
+        on_image_information(streams.map(&:first))
 
-          streams.each.with_index { |(_, stream), index|
-            Thread.new {
-              pixbuf = Gdk::PixbufLoader.open{ |loader|
-                loader.write(stream.read)
-                stream.close
-              }.pixbuf
-
-              Delayer.new { on_image_loaded(index, pixbuf) }
-            }
-          }
+        streams.each.with_index { |(_, stream), index|
+          pixbuf = Gdk::PixbufLoader.open{ |loader|
+            loader.write(stream.read)
+            stream.close
+          }.pixbuf
+          on_image_loaded(index, pixbuf)
         }
       end
     end
