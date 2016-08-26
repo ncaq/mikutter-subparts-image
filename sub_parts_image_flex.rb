@@ -16,7 +16,7 @@ Plugin.create(:sub_parts_image_flex) {
 
     def initialize(*args)
       super
-      @main_icons = []
+      @pixels = []
 
       if helper.message
         # URLを解決
@@ -39,44 +39,45 @@ Plugin.create(:sub_parts_image_flex) {
             loader.write(stream.read)
             stream.close
           }.pixbuf
-          @main_icons[index] = pixbuf
+          @pixels[index] = pixbuf
         }
       end
     end
 
     # サブパーツを描画
     def render(context)
-      @main_icons.map!.with_index { |icon, i|
-        max_width = self.width / @main_icons.length
-        draw_rect = Gdk::Rectangle.new(
+      @pixels.map!.with_index { |icon, i|
+        max_width = self.width / @pixels.length
+        rect = Gdk::Rectangle.new(
           i * max_width, 0, max_width, UserConfig[:sub_parts_image_flex_max_height])
 
-        hscale = draw_rect.height.to_f / icon.height
-        icon = icon.scale(icon.width * hscale, icon.height * hscale)
+        hscale = rect.height.to_f / icon.height
+        wscale = rect.width.to_f / icon.width
 
-        if draw_rect.width < icon.width then # 横幅がはみ出していたらscaleし直す
-          wscale = draw_rect.width.to_f / icon.width
+        if rect.height < (icon.height * wscale) then # 横に拡大した時,縦にはみだす場合
+          icon = icon.scale(icon.width * hscale, icon.height * hscale)
+        else
           icon = icon.scale(icon.width * wscale, icon.height * wscale)
         end
 
         context.save {
-          context.translate(draw_rect.x, draw_rect.y)
+          context.translate(rect.x, rect.y)
           context.set_source_pixbuf(icon)
           context.paint
         }
         icon
       }
-      unless @main_icons.empty? || @reset_heighted
+      unless @pixels.empty? || @reset_heighted
         @reset_heighted = true
         helper.reset_height
       end
     end
 
     def height
-      if @main_icons.empty? then
+      if @pixels.empty? then
         0
       else
-        @main_icons.max_by { |x| x.height } .height
+        @pixels.max_by { |x| x.height } .height
       end
     end
   end
