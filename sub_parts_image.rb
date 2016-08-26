@@ -40,6 +40,7 @@ Plugin.create :sub_parts_image do
     def initialize(*args)
       super
       @main_icons = []
+      @draw_rects = []
 
       if helper.message
         # URLを解決
@@ -69,38 +70,23 @@ Plugin.create :sub_parts_image do
       end
     end
 
-    # 画像を描画する座標とサイズを返す
-    # ==== Args
-    # [pos] Fixnum 画像インデックス
-    # ==== Return
-    # Gdk::Rectangle その画像を描画する場所
-    def image_draw_area(pos)
-      if @main_icons.length == 0 # 0除算の回避
-        Gdk::Rectangle.new(0, 0, 0, 0)
-      else
-        max_width = UserConfig[:subparts_image_max_height] * draw_aspect_ratio
-        width = [self.width / @main_icons.length, max_width].min
-        height = width / draw_aspect_ratio
-        x = width * pos
-        y = 0
-        Gdk::Rectangle.new(x, y, width, height)
-      end
-    end
-
-    def draw_aspect_ratio
-      Rational(16, 9)
-    end
-
     # サブパーツを描画
     def render(context)
-      @main_icons.compact.each.with_index { |icon, pos|
-        draw_rect = image_draw_area(pos)
-        wscale = draw_rect.width.to_f  / icon.width
-        hscale = draw_rect.height.to_f / icon.height
-        scale = [wscale, hscale].min # アスペクト比を保ち,はみ出さない範囲のスケール
-        icon = icon.scale(icon.width * scale, icon.height * scale)
+      @main_icons.compact.each.with_index { |icon, i|
+        width = self.width.to_f / @main_icons.length
+        height = UserConfig[:subparts_image_max_height]
+        @draw_rects[i] = Gdk::Rectangle.new(i * width, 0, width, height)
+
+        wscale = @draw_rects[i].width / icon.width
+        icon = icon.scale(wscale, wscale)
+
+        if height < icon.height then # heightがはみ出していたら
+          hscale = @draw_rects[i].height / icon.height
+          icon = icon.scale(hscale, hscale) # hscaleで拡大しなおし
+        end
+
         context.save {
-          context.translate(draw_rect.x, draw_rect.y)
+          context.translate(@draw_rect[i].x, @draw_rect[i].y)
           context.set_source_pixbuf(icon)
           context.paint(UserConfig[:subparts_image_tp] / 100.0)
         }
@@ -108,7 +94,11 @@ Plugin.create :sub_parts_image do
     end
 
     def height
-      image_draw_area(0).height
+      if @draw_rects.empty? then
+        0
+      else
+        @draw_rects.max_by { |x| x.height }.height
+      end
     end
   end
 end
