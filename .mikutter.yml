@@ -1,0 +1,11 @@
+---
+slug: :sub_parts_image_flex
+depends:
+  mikutter: '3.4.2'
+  plugin:
+  - gtk
+  - openimg
+version: '6.0.0'
+author: moguno
+name: "sub parts image flex"
+description: mikutter-subparts-imageのレイアウト改造版です
