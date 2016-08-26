@@ -4,13 +4,11 @@ miquire :mui, 'sub_parts_helper'
 require 'gtk2'
 require 'cairo'
 
-Plugin.create :sub_parts_image do
-  UserConfig[:subparts_image_tp] ||= 100
-  UserConfig[:subparts_image_max_height] ||= 400
+Plugin.create :sub_parts_image_flex do
+  UserConfig[:sub_parts_image_flex_max_height] ||= 300
 
   settings "インライン画像表示" do
-    adjustment("濃さ(%)", :subparts_image_tp, 0, 100)
-    adjustment("画像の最大縦幅(px)", :subparts_image_max_height, 0, 10000)
+    adjustment("画像の最大縦幅(px)", :sub_parts_image_flex_max_height, 0, 10000)
   end
 
   defimageopener('youtube thumbnail (shrinked)', /^http:\/\/youtu.be\/([^\?\/\#]+)/) do |url|
@@ -34,7 +32,7 @@ Plugin.create :sub_parts_image do
   end
 
   # サブパーツ
-  class Gdk::SubPartsImage < Gdk::SubParts
+  class Gdk::SubPartsImageFlex < Gdk::SubParts
     regist
 
     def initialize(*args)
@@ -53,7 +51,7 @@ Plugin.create :sub_parts_image do
           when :media
             entity[:media_url]
           end
-        } + Array(helper.message[:subparts_images])
+        }
         streams = urls.map { |url|
           Plugin.filtering(:openimg_raw_image_from_display_url, url, nil)
         }.select(&:last)
@@ -74,7 +72,7 @@ Plugin.create :sub_parts_image do
     def render(context)
       @main_icons.compact.each.with_index { |icon, i|
         width = self.width.to_f / @main_icons.length
-        height = UserConfig[:subparts_image_max_height]
+        height = UserConfig[:sub_parts_image_flex_max_height]
         @draw_rects[i] = Gdk::Rectangle.new(i * width, 0, width, height)
 
         wscale = @draw_rects[i].width / icon.width
@@ -86,9 +84,9 @@ Plugin.create :sub_parts_image do
         end
 
         context.save {
-          context.translate(@draw_rect[i].x, @draw_rect[i].y)
+          context.translate(@draw_rects[i].x, @draw_rects[i].y)
           context.set_source_pixbuf(icon)
-          context.paint(UserConfig[:subparts_image_tp] / 100.0)
+          context.paint()
         }
       }
     end
@@ -97,7 +95,7 @@ Plugin.create :sub_parts_image do
       if @draw_rects.empty? then
         0
       else
-        @draw_rects.max_by { |x| x.height }.height
+        @draw_rects.max_by { |x| x.height } .height
       end
     end
   end

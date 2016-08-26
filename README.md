@@ -1,10 +1,11 @@
-#subparts_image
+# sub_parts_image_flex
 
-##これアレ？
+## これ何?
 
-mikutterにインライン画像表示機能を付与します。
+[mikutter-subparts-image](https://github.com/moguno/mikutter-subparts-image)レイアウト改造版です.
 
-fork元から大幅に改変しました
+fork元から大幅に改変しました.
 
-##ライセンス
+## ライセンス
+
 mikutter 0.2.2.1476のライセンスに準じます。
