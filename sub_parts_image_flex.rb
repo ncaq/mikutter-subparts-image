@@ -51,12 +51,12 @@ Plugin.create(:sub_parts_image_flex) {
         draw_rect = Gdk::Rectangle.new(
           i * max_width, 0, max_width, UserConfig[:sub_parts_image_flex_max_height])
 
-        wscale = draw_rect.width.to_f / icon.width
-        icon = icon.scale(icon.width * wscale, icon.height * wscale)
+        hscale = draw_rect.height.to_f / icon.height
+        icon = icon.scale(icon.width * hscale, icon.height * hscale)
 
-        if draw_rect.height < icon.height then # heightがはみ出していたら
-          hscale = draw_rect.height.to_f / icon.height
-          icon = icon.scale(icon.width * hscale, icon.height * hscale) # hscaleで拡大しなおし
+        if draw_rect.width < icon.width then # 横幅がはみ出していたらscaleし直す
+          wscale = draw_rect.width.to_f / icon.width
+          icon = icon.scale(icon.width * wscale, icon.height * wscale)
         end
 
         context.save {
