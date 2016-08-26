@@ -6,6 +6,6 @@ depends:
   - gtk
   - openimg
 version: '6.0.0'
-author: moguno
+author: moguno ncaq
 name: "sub parts image flex"
 description: mikutter-subparts-imageのレイアウト改造版です
