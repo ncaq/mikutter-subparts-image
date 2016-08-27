@@ -5,7 +5,7 @@ require 'gtk2'
 require 'cairo'
 
 Plugin.create(:sub_parts_image_flex) {
-  UserConfig[:sub_parts_image_flex_max_height] ||= 400
+  UserConfig[:sub_parts_image_flex_max_height] ||= 350
 
   settings("インライン画像表示") {
     adjustment("画像の最大縦幅(px)", :sub_parts_image_flex_max_height, 0, 10000)
