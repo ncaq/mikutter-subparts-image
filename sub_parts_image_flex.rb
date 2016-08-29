@@ -16,8 +16,7 @@ Plugin.create(:sub_parts_image_flex) {
 
     def initialize(*args)
       super
-      @pixels = []
-
+      @pixbufs = []
       if helper.message
         # URLを解決
         urls = helper.message.entity
@@ -39,45 +38,45 @@ Plugin.create(:sub_parts_image_flex) {
             loader.write(stream.read)
             stream.close
           }.pixbuf
-          @pixels[index] = pixbuf
+          @pixbufs[index] = pixbuf
         }
       end
     end
 
     # サブパーツを描画
     def render(context)
-      @pixels.map!.with_index { |icon, i|
-        max_width = self.width / @pixels.length
+      @pixbufs.map!.with_index { |pixbuf, i|
+        max_width = self.width / @pixbufs.length
         rect = Gdk::Rectangle.new(
           i * max_width, 0, max_width, UserConfig[:sub_parts_image_flex_max_height])
 
-        hscale = rect.height.to_f / icon.height
-        wscale = rect.width.to_f / icon.width
+        hscale = rect.height.to_f / pixbuf.height
+        wscale = rect.width.to_f / pixbuf.width
 
-        if rect.height < (icon.height * wscale) then # 横に拡大した時,縦にはみだす場合
-          icon = icon.scale(icon.width * hscale, icon.height * hscale)
+        if rect.height < (pixbuf.height * wscale) then # 縦にはみだす場合
+          pixbuf = pixbuf.scale(pixbuf.width * hscale, pixbuf.height * hscale)
         else
-          icon = icon.scale(icon.width * wscale, icon.height * wscale)
+          pixbuf = pixbuf.scale(pixbuf.width * wscale, pixbuf.height * wscale)
         end
 
         context.save {
           context.translate(rect.x, rect.y)
-          context.set_source_pixbuf(icon)
+          context.set_source_pixbuf(pixbuf)
           context.paint
         }
-        icon
+        pixbuf
       }
-      unless @pixels.empty? || @reset_heighted
-        @reset_heighted = true
+      unless @pixbufs.empty? || @reseted_height
+        @reseted_height = true
         helper.reset_height
       end
     end
 
     def height
-      if @pixels.empty? then
+      if @pixbufs.empty? then
         0
       else
-        @pixels.max_by { |x| x.height } .height
+        @pixbufs.max_by { |x| x.height } .height
       end
     end
   end
