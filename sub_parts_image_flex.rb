@@ -59,6 +59,8 @@ Plugin.create(:sub_parts_image_flex) {
           else
             pixbuf.scale(pixbuf.width * wscale, pixbuf.height * wscale)
           end
+        rect.width = pixbuf.width
+        rect.height = pixbuf.height
 
         context.save {
           context.translate(rect.x, rect.y)
