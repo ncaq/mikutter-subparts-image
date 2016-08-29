@@ -12,7 +12,7 @@ Plugin.create(:sub_parts_image_flex) {
   }
 
   class Gdk::SubPartsImageFlex < Gdk::SubParts
-    regist
+    register
 
     def initialize(*args)
       super
