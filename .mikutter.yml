@@ -5,7 +5,7 @@ depends:
   plugin:
   - gtk
   - openimg
-version: '6.0.2'
+version: '6.0.3'
 author: moguno ncaq
 name: "sub parts image flex"
 description: mikutter-subparts-imageのレイアウト改造版です
