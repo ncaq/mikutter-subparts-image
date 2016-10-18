@@ -15,26 +15,27 @@ Plugin.create(:sub_parts_image_flex) {
       super
       @pixbufs = []
       @rects = []
-      Thread.new(helper.message.entity) { |entity|
-        entity.map { |t|
-          url = case t[:slug]
-                when :urls
-                  t[:expanded_url]
-                when :media
-                  t[:media_url]
-                else
-                  nil
-                end
-          _, loader, thread = Plugin.filtering(:openimg_pixbuf_from_display_url, url, nil, nil)
-          if thread
-            thread.join(60)
-            loader.pixbuf
-          else
-            nil
-          end
-        } .compact.each.with_index { |pixbuf, index|
-          @pixbufs[index] = pixbuf
-        }
+
+      urls = helper.message.entity.map { |t|
+        case t[:slug]
+        when :urls
+          t[:expanded_url]
+        when :media
+          t[:media_url]
+        else
+          nil
+        end
+      }.compact
+
+      urls.each.with_index { |url, index|
+        _, loader, thread = Plugin.filtering(:openimg_pixbuf_from_display_url, url, nil, nil)
+        if thread
+          Thread.new {
+            if thread.join(60) && loader.pixbuf
+              @pixbufs[index] = loader.pixbuf
+            end
+          }
+        end
       }
     end
 
@@ -64,7 +65,8 @@ Plugin.create(:sub_parts_image_flex) {
         }
         rect
       }
-      unless @pixbufs.empty?
+      unless @pixbufs.empty? || @reseted_height
+        @reseted_height = true
         helper.reset_height
       end
     end
