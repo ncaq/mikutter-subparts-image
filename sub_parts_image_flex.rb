@@ -41,7 +41,7 @@ Plugin.create(:sub_parts_image_flex) {
 
     # サブパーツを描画
     def render(context)
-      @rects = @pixbufs.map.with_index { |pixbuf, i|
+      @rects = @pixbufs.compact.map.with_index { |pixbuf, i|
         max_width = self.width / @pixbufs.length
         rect = Gdk::Rectangle.new(
           i * max_width, 0, max_width, UserConfig[:sub_parts_image_flex_max_height])
