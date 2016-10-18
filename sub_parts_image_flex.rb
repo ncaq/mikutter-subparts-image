@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
 miquire :mui, 'sub_parts_helper'
 
-require 'gtk2'
-require 'cairo'
-
 Plugin.create(:sub_parts_image_flex) {
   UserConfig[:sub_parts_image_flex_max_height] ||= 350
 
@@ -17,30 +14,31 @@ Plugin.create(:sub_parts_image_flex) {
     def initialize(*args)
       super
       @pixbufs = []
-      if helper.message
-        # URLを解決
-        urls = helper.message.entity
-               .select { |entity| %i<urls media>.include? entity[:slug] }
-               .map { |entity|
-          case entity[:slug]
-          when :urls
-            entity[:expanded_url]
-          when :media
-            entity[:media_url]
+      helper.message.entity.map { |t|
+        url = case t[:slug]
+              when :urls
+                t[:expanded_url]
+              when :media
+                t[:media_url]
+              else
+                nil
+              end
+        _, loader, thread = Plugin.filtering(:openimg_pixbuf_from_display_url, url, nil, nil)
+        if thread
+          until thread.join(0.1)
           end
+          loader.pixbuf
+        else
+          nil
+        end
+      }.compact.each.with_index { |(pixbuf), index|
+        @pixbufs[index] = pixbuf
+        Reserver.new(1) {
+          Delayer.new {
+            helper.reset_height
+          }
         }
-        streams = urls.map { |url|
-          Plugin.filtering(:openimg_raw_image_from_display_url, url, nil)
-        }.select(&:last)
-        # 画像を保存
-        streams.each.with_index { |(_, stream), index|
-          pixbuf = Gdk::PixbufLoader.open{ |loader|
-            loader.write(stream.read)
-            stream.close
-          }.pixbuf
-          @pixbufs[index] = pixbuf
-        }
-      end
+      }
     end
 
     # サブパーツを描画
