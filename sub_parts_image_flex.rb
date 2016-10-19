@@ -47,13 +47,14 @@ Plugin.create(:sub_parts_image_flex) {
       @rects = @pixbufs.compact.map.with_index { |pixbuf, i|
         max_width = self.width / @pixbufs.length
         rect = Gdk::Rectangle.new(
-          i * max_width, 0, max_width, UserConfig[:sub_parts_image_flex_max_height])
+          i * max_width, 0, max_width, UserConfig[:sub_parts_image_flex_max_height]
+        )
 
         hscale = rect.height.to_f / pixbuf.height.to_f
         wscale = rect.width.to_f / pixbuf.width.to_f
 
         pixbuf =
-          if rect.height < (pixbuf.height * wscale) then # 縦にはみだす場合
+          if rect.height < (pixbuf.height * wscale) # 縦にはみだす場合
             pixbuf.scale(pixbuf.width * hscale, pixbuf.height * hscale)
           else
             pixbuf.scale(pixbuf.width * wscale, pixbuf.height * wscale)
@@ -75,10 +76,10 @@ Plugin.create(:sub_parts_image_flex) {
     end
 
     def height
-      if @rects.empty? then
+      if @rects.empty?
         0
       else
-        @rects.max_by { |x| x.height } .height
+        @rects.map(&:height).max
       end
     end
   end
