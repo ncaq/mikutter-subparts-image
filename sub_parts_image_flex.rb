@@ -29,10 +29,10 @@ Plugin.create(:sub_parts_image_flex) {
 
       unless urls.empty?
         Thread.new {
-          urls.each.with_index { |url, index|
+          urls.each { |url|
             _, loader, thread = Plugin.filtering(:openimg_pixbuf_from_display_url, url, nil, nil)
             if thread && thread.join(60) && loader.pixbuf
-              @pixbufs[index] = loader.pixbuf
+              @pixbufs << loader.pixbuf
             end
           }
           Delayer.new {
