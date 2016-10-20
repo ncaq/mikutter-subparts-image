@@ -35,9 +35,7 @@ Plugin.create(:sub_parts_image_flex) {
               @pixbufs[index] = loader.pixbuf
             end
           }
-          Delayer.new {
-            helper.reset_height
-          }
+          @reseted_height = false
         }
       end
     end
