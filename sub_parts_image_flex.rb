@@ -34,10 +34,12 @@ Plugin.create(:sub_parts_image_flex) {
             if thread && thread.join(60) && loader.pixbuf
               @pixbufs << loader.pixbuf
             end
-          }
-          Delayer.new {
             @reseted_height = false
-            helper.reset_height
+          }
+          Reserver.new(1) {
+            Delayer.new {
+              helper.reset_height
+            }
           }
         }
       end
