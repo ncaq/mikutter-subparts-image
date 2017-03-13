@@ -13,76 +13,40 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
 
     def initialize(*args)
       super
-      @pixbufs = []
-      @rects = []
-
-      urls = helper.message.entity.map { |t|
-        case t[:slug]
-        when :urls
-          t[:expanded_url]
-        when :media
-          t[:media_url]
-        else
-          nil
-        end
+      @height = UserConfig[:mikutter_sub_parts_image_flex_max_height]
+      @photos = helper.message.entity.select { |t|
+        t[:type] == "photo"
+      }.compact.map { |t|
+        t[:open]
       }.compact
-
-      unless urls.empty?
-        Thread.new {
-          urls.each { |url|
-            _, loader, thread = Plugin.filtering(:openimg_pixbuf_from_display_url, url, nil, nil)
-            if thread && thread.join(60) && loader.pixbuf
-              @pixbufs << loader.pixbuf
-            end
-            @reseted_height = false
-          }
-          Reserver.new(1) {
-            Delayer.new {
-              helper.reset_height
-            }
-          }
-        }
-      end
     end
 
-    # サブパーツを描画
     def render(context)
-      @rects = @pixbufs.compact.map.with_index { |pixbuf, i|
-        max_width = self.width / @pixbufs.length
-        rect = Gdk::Rectangle.new(
-          i * max_width, 0, max_width, UserConfig[:mikutter_sub_parts_image_flex_max_height]
-        )
-
-        hscale = rect.height.to_f / pixbuf.height.to_f
-        wscale = rect.width.to_f / pixbuf.width.to_f
-
-        pixbuf =
-          if rect.height < (pixbuf.height * wscale) # 縦にはみだす場合
-            pixbuf.scale(pixbuf.width * hscale, pixbuf.height * hscale)
-          else
-            pixbuf.scale(pixbuf.width * wscale, pixbuf.height * wscale)
-          end
-        rect.width = pixbuf.width
-        rect.height = pixbuf.height
-
+      pixbufs = @photos.map { |photo|
+        photo.load_pixbuf(width: self.width / @photos.length,
+                          height: UserConfig[:mikutter_sub_parts_image_flex_max_height]) {
+          helper.on_modify
+        }
+      }
+      pixbufs.each.with_index { |pixbuf, index|
         context.save {
-          context.translate(rect.x, rect.y)
+          context.translate(index * (self.width / pixbufs.length), 0)
           context.set_source_pixbuf(pixbuf)
           context.paint
         }
-        rect
       }
-      unless @pixbufs.empty? || @reseted_height
-        @reseted_height = true
+      @height = pixbufs.map(&:height).max
+      unless @reseted_height
         helper.reset_height
+        @reseted_height = true
       end
     end
 
     def height
-      if @rects.empty?
+      if @photos.empty?
         0
       else
-        @rects.map(&:height).max
+        @height
       end
     end
   end
