@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 miquire :mui, 'sub_parts_helper'
 
-Plugin.create(:sub_parts_image_flex) {
-  UserConfig[:sub_parts_image_flex_max_height] ||= 300
+Plugin.create(:mikutter_sub_parts_image_flex) {
+  UserConfig[:mikutter_sub_parts_image_flex_max_height] ||= 300
 
   settings("インライン画像表示") {
-    adjustment("画像の最大縦幅(px)", :sub_parts_image_flex_max_height, 0, 10000)
+    adjustment("画像の最大縦幅(px)", :mikutter_sub_parts_image_flex_max_height, 0, 10000)
   }
 
-  class Gdk::SubPartsImageFlex < Gdk::SubParts
+  class Gdk::MikutterSubPartsImageFlex < Gdk::SubParts
     register
 
     def initialize(*args)
@@ -50,7 +50,7 @@ Plugin.create(:sub_parts_image_flex) {
       @rects = @pixbufs.compact.map.with_index { |pixbuf, i|
         max_width = self.width / @pixbufs.length
         rect = Gdk::Rectangle.new(
-          i * max_width, 0, max_width, UserConfig[:sub_parts_image_flex_max_height]
+          i * max_width, 0, max_width, UserConfig[:mikutter_sub_parts_image_flex_max_height]
         )
 
         hscale = rect.height.to_f / pixbuf.height.to_f
