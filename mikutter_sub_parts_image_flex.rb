@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 miquire :mui, 'sub_parts_helper'
 
 Plugin.create(:mikutter_sub_parts_image_flex) {
@@ -13,42 +13,45 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
 
     def initialize(*args)
       super
-      @height = UserConfig[:mikutter_sub_parts_image_flex_max_height]
-      @photos = helper.message.entity.select { |t|
-        t[:type] == "photo"
-      }.compact.map { |t|
+      @photos = helper.message.entity.select { |t| t[:type] == "photo" }.compact.map { |t|
         t[:open]
       }.compact
+      @pixbufs = []
+      if @photos.empty?
+        @height = 0
+      else
+        @height = UserConfig[:mikutter_sub_parts_image_flex_max_height]
+      end
     end
 
     def render(context)
-      pixbufs = @photos.map { |photo|
-        photo.load_pixbuf(width: self.width / @photos.length,
-                          height: UserConfig[:mikutter_sub_parts_image_flex_max_height]) {
-          @reseted_height = false
-          helper.on_modify
-        }
+      @photos.each.with_index { |photo, index|
+        w = self.width / @photos.length
+        h = UserConfig[:mikutter_sub_parts_image_flex_max_height]
+        if pix = photo.pixbuf(width: w, height: h)
+          @pixbufs[index] = pix
+          @height = @pixbufs.map(&:height).max
+          helper.reset_height
+        else
+          photo.load_pixbuf(width: w, height: h) { |pixbuf|
+            @pixbufs[index] = pixbuf
+            @height = @pixbufs.map(&:height).max
+            helper.reset_height
+            helper.on_modify
+          }
+        end
       }
-      pixbufs.each.with_index { |pixbuf, index|
+      @pixbufs.each.with_index { |pixbuf, index|
         context.save {
-          context.translate(index * (self.width / pixbufs.length), 0)
+          context.translate(index * (self.width / @photos.length), 0)
           context.set_source_pixbuf(pixbuf)
           context.paint
         }
       }
-      @height = pixbufs.map(&:height).max
-      unless @photos.empty? || @reseted_height
-        helper.reset_height
-        @reseted_height = true
-      end
     end
 
     def height
-      if @photos.empty?
-        0
-      else
-        @height
-      end
+      @height
     end
   end
 }
