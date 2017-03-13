@@ -31,7 +31,10 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
         if pix = photo.pixbuf(width: w, height: h)
           @pixbufs[index] = pix
           @height = @pixbufs.map(&:height).max
-          helper.reset_height
+          unless @reseted
+            @reseted = true
+            helper.reset_height
+          end
         else
           photo.load_pixbuf(width: w, height: h) { |pixbuf|
             @pixbufs[index] = pixbuf
