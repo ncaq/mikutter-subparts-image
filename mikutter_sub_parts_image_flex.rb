@@ -36,7 +36,7 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
         }
       }
       @height = pixbufs.map(&:height).max
-      unless @reseted_height
+      unless @photos.empty? || @reseted_height
         helper.reset_height
         @reseted_height = true
       end
