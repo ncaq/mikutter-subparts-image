@@ -25,6 +25,7 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
       pixbufs = @photos.map { |photo|
         photo.load_pixbuf(width: self.width / @photos.length,
                           height: UserConfig[:mikutter_sub_parts_image_flex_max_height]) {
+          @reseted_height = false
           helper.on_modify
         }
       }
