@@ -17,11 +17,6 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
         t[:open]
       }.compact
       @pixbufs = []
-      if @photos.empty?
-        @height = 0
-      else
-        @height = UserConfig[:mikutter_sub_parts_image_flex_max_height]
-      end
     end
 
     def render(context)
@@ -30,7 +25,6 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
         h = UserConfig[:mikutter_sub_parts_image_flex_max_height]
         if pix = photo.pixbuf(width: w, height: h)
           @pixbufs[index] = pix
-          @height = @pixbufs.compact.map(&:height).max || 0
           unless @reseted
             @reseted = true
             helper.reset_height
@@ -38,7 +32,6 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
         else
           photo.load_pixbuf(width: w, height: h) { |pixbuf|
             @pixbufs[index] = pixbuf
-            @height = @pixbufs.map(&:height).max
             helper.reset_height
             helper.on_modify
           }
@@ -54,7 +47,13 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
     end
 
     def height
-      @height
+      if @pixbufs.empty?
+        0
+      else
+        [@pixbufs.compact.map(&:height).max,
+         UserConfig[:mikutter_sub_parts_image_flex_max_height]
+        ].min
+      end
     end
   end
 }
