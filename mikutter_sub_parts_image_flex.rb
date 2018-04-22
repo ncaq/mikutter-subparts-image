@@ -30,7 +30,7 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
         h = UserConfig[:mikutter_sub_parts_image_flex_max_height]
         if pix = photo.pixbuf(width: w, height: h)
           @pixbufs[index] = pix
-          @height = @pixbufs.map(&:height).max
+          @height = @pixbufs.compact.map(&:height).max || 0
           unless @reseted
             @reseted = true
             helper.reset_height
@@ -44,7 +44,7 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
           }
         end
       }
-      @pixbufs.each.with_index { |pixbuf, index|
+      @pixbufs.compact.each.with_index { |pixbuf, index|
         context.save {
           context.translate(index * (self.width / @photos.length), 0)
           context.set_source_pixbuf(pixbuf)
