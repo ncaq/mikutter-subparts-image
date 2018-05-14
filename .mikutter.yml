@@ -1,11 +1,11 @@
 ---
 slug: :mikutter_sub_parts_image_flex
 depends:
-  mikutter: '3.5.3'
+  mikutter: '3.7.0'
   plugin:
   - gtk
   - openimg
-version: '7.0.0'
+version: '8.0.0'
 author: moguno ncaq
 name: "mikutter sub parts image flex"
 description: mikutter-subparts-imageのレイアウト改造版です

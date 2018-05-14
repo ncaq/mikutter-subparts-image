@@ -13,46 +13,49 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
 
     def initialize(*args)
       super
-      @photos = helper.message.entity.select { |t| t[:type] == "photo" }.compact.map { |t|
-        t[:open]
-      }.compact
-      @pixbufs = []
+      @photos = Plugin[:"mikutter_sub_parts_image_flex"].score_of(helper.message).map(&:uri).
+                  map{ |uri|
+        Plugin.filtering(:photo_filter, uri, []).last
+      }.flatten.compact
     end
 
     def render(context)
-      @photos.each.with_index { |photo, index|
-        w = self.width / @photos.length
+      # チラツキ軽減
+      if @photos.empty?
+        return
+      end
+      # reset回数を減らすために差分を取る
+      old_height = self.height
+      @pixbufs = @photos.map.with_index { |photo, index|
+        w = self.width / (@pixbufs && @pixbufs.length != 0 ? @pixbufs.length : 1)
         h = UserConfig[:mikutter_sub_parts_image_flex_max_height]
-        if pix = photo.pixbuf(width: w, height: h)
-          @pixbufs[index] = pix
-          unless @reseted
-            @reseted = true
-            helper.reset_height
-          end
+        pixbuf = photo.pixbuf(width: w, height: h)
+        if pixbuf
+          pixbuf
         else
-          photo.load_pixbuf(width: w, height: h) { |pixbuf|
-            @pixbufs[index] = pixbuf
-            helper.reset_height
+          photo.download_pixbuf(width: w, height: h).next {
             helper.on_modify
           }
+          nil
         end
-      }
-      @pixbufs.compact.each.with_index { |pixbuf, index|
+      }.compact
+      @pixbufs.each.with_index { |pixbuf, index|
         context.save {
-          context.translate(index * (self.width / @photos.length), 0)
+          context.translate(index * (self.width / @pixbufs.length), 0)
           context.set_source_pixbuf(pixbuf)
           context.paint
         }
       }
+      if self.height != old_height
+        helper.reset_height
+      end
     end
 
     def height
       if @pixbufs.empty?
         0
       else
-        [@pixbufs.compact.map(&:height).max,
-         UserConfig[:mikutter_sub_parts_image_flex_max_height]
-        ].min
+        [@pixbufs.map(&:height).max, UserConfig[:mikutter_sub_parts_image_flex_max_height]].min
       end
     end
   end
