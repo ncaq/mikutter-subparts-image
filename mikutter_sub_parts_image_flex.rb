@@ -13,18 +13,19 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
 
     def initialize(*args)
       super
-      @photos = Plugin[:"mikutter_sub_parts_image_flex"].score_of(helper.message).map(&:uri).
-                  map{ |uri|
-        Plugin.filtering(:photo_filter, uri, []).last
+      @photos = Plugin[:"score"].score_of(helper.message).select { |model|
+        model.is_a?(Plugin::Score::HyperLinkNote)
+      }.map{ |model|
+        Plugin.filtering(:photo_filter, model.uri, []).last
       }.flatten.compact
     end
 
     def render(context)
-      # チラツキ軽減
+      # 処理を多少軽くする
       if @photos.empty?
         return
       end
-      # reset回数を減らすために差分を取る
+      # 差分を取って同じheightの場合resetしない
       old_height = self.height
       @pixbufs = @photos.map.with_index { |photo, index|
         w = self.width / (@pixbufs && @pixbufs.length != 0 ? @pixbufs.length : 1)
@@ -35,6 +36,10 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
         else
           photo.download_pixbuf(width: w, height: h).next {
             helper.on_modify
+          }.trap {
+            Delayer.new {
+              @photos.delete(photo)
+            }
           }
           nil
         end
