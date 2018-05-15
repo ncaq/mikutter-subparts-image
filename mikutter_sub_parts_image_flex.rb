@@ -18,6 +18,7 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
       }.map{ |model|
         Plugin.filtering(:photo_filter, model.uri, []).last
       }.flatten.compact
+      @reseted_height = false
     end
 
     def render(context)
@@ -25,13 +26,17 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
       if @photos.empty?
         return
       end
-      # 差分を取って同じheightの場合resetしない
-      old_height = self.height
       @pixbufs = @photos.map.with_index { |photo, index|
         w = self.width / (@pixbufs && @pixbufs.length != 0 ? @pixbufs.length : 1)
         h = UserConfig[:mikutter_sub_parts_image_flex_max_height]
         pixbuf = photo.pixbuf(width: w, height: h)
         if pixbuf
+          # @reseted_heightを参照することで,heightが縮小する場合に正しく計算がされないが,
+          # チラツキの予防のため仕方のない犠牲と諦める
+          unless @reseted_height
+            @reseted_height = true
+            helper.reset_height
+          end
           pixbuf
         else
           photo.download_pixbuf(width: w, height: h).next {
@@ -51,9 +56,6 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
           context.paint
         }
       }
-      if self.height != old_height
-        helper.reset_height
-      end
     end
 
     def height
