@@ -18,6 +18,10 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
       }.map{ |model|
         Plugin.filtering(:photo_filter, model.uri, []).last
       }.flatten.compact
+      @photos.each { |photo|
+        photo.download(width: self.width,
+                       height: UserConfig[:mikutter_sub_parts_image_flex_max_height])
+      }
       @reseted_height = false
     end
 
