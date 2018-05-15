@@ -27,13 +27,14 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
         return
       end
       @pixbufs = @photos.map.with_index { |photo, index|
-        w = self.width / (@pixbufs && @pixbufs.length != 0 ? @pixbufs.length : 1)
+        w = self.width / @photos.length
         h = UserConfig[:mikutter_sub_parts_image_flex_max_height]
         pixbuf = photo.pixbuf(width: w, height: h)
         if pixbuf
           # @reseted_heightを参照することで,heightが縮小する場合に正しく計算がされないが,
           # チラツキの予防のため仕方のない犠牲と諦める
-          unless @reseted_height
+          # resetするのは最後のphoto読み込みの場合のみ
+          if !@reseted_height && index == @photos.length - 1
             @reseted_height = true
             helper.reset_height
           end
@@ -44,6 +45,7 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
           }.trap {
             Delayer.new {
               @photos.delete(photo)
+              helper.on_modify
             }
           }
           nil
