@@ -21,7 +21,7 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
       @reset_height_need = false
       @photos.each { |photo|
         photo.download_pixbuf(width: self.width,
-                              height: self.max_height).next {
+                              height: self.max_height).next { |pixbuf|
           @reset_height_need = true
           helper.on_modify
         }.trap {
@@ -34,8 +34,19 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
 
     def render(context)
       old_height = self.height
-      @pixbufs = @photos.map { |photo|
-        photo.pixbuf(width: self.width, height: self.max_height)
+      @pixbufs = @photos.map.with_index { |photo, index|
+        pixbuf = photo.pixbuf(width: self.width, height: self.max_height)
+        next nil unless pixbuf
+        max_width = self.width / @photos.length
+        rect = Gdk::Rectangle.new(index * max_width, 0, max_width, self.max_height)
+        hscale = rect.height.to_f / pixbuf.height.to_f
+        wscale = rect.width.to_f / pixbuf.width.to_f
+        if rect.height < (pixbuf.height * wscale) # 縦にはみだす場合
+          pixbuf.scale(pixbuf.width * hscale, pixbuf.height * hscale)
+        else
+          pixbuf.scale(pixbuf.width * wscale, pixbuf.height * wscale)
+        end
+        pixbuf
       }.compact
       @pixbufs.each.with_index { |pixbuf, index|
         context.save {
