@@ -46,7 +46,6 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
         else
           pixbuf.scale(pixbuf.width * wscale, pixbuf.height * wscale)
         end
-        pixbuf
       }.compact
       @pixbufs.each.with_index { |pixbuf, index|
         context.save {
