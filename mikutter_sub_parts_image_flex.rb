@@ -18,46 +18,25 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
       }.map{ |model|
         Plugin.filtering(:photo_filter, model.uri, []).last
       }.flatten.compact
+      @reset_height_need = false
       @photos.each { |photo|
-        photo.download(width: self.width,
-                       height: self.max_height).next {
+        photo.download_pixbuf(width: self.width,
+                              height: self.max_height).next {
+          @reset_height_need = true
           helper.on_modify
         }.trap {
           Delayer.new {
             @photos.delete(photo)
-            helper.on_modify
           }
         }
       }
-      @reseted_height = false
     end
 
     def render(context)
-      # 処理を多少軽くする
-      if @photos.empty?
-        return
-      end
       old_height = self.height
-      @pixbufs = @photos.map.with_index { |photo, index|
-        w = self.width / @photos.length
-        h = self.max_height
-        pixbuf = photo.pixbuf(width: w, height: h)
-        if pixbuf
-          pixbuf
-        else
-          photo.download_pixbuf(width: w, height: h).next {
-            @reseted_height = false
-            helper.on_modify
-          }
-          nil
-        end
+      @pixbufs = @photos.map { |photo|
+        photo.pixbuf(width: self.width, height: self.max_height)
       }.compact
-      # @reseted_heightを参照することで,heightが縮小する場合に正しく計算がされないが,
-      # チラツキの予防のため仕方のない犠牲と諦める
-      if !@reseted_height && old_height != self.height
-        @reseted_height = true
-        helper.reset_height
-      end
       @pixbufs.each.with_index { |pixbuf, index|
         context.save {
           context.translate(index * (self.width / @pixbufs.length), 0)
@@ -65,6 +44,10 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
           context.paint
         }
       }
+      if @reset_height_need && old_height != self.height
+        @reset_height_need = false
+        helper.reset_height
+      end
     end
 
     def height
