@@ -15,7 +15,7 @@ Plugin.create(:mikutter_sub_parts_image_flex) {
       super
       @photos = Plugin[:"score"].score_of(helper.message).select { |model|
         model.is_a?(Plugin::Score::HyperLinkNote) &&
-           /(\.jpe?g|\.png|\.gif|\.svg)/.match(model.uri.to_s)
+           /(media|\.jpe?g|\.png|\.gif|\.svg)/.match(model.uri.to_s)
       }.map{ |model|
         Plugin.filtering(:photo_filter, model.uri, []).last
       }.flatten.compact
