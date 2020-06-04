@@ -1,6 +1,3 @@
-# coding: utf-8
-miquire :mui, 'sub_parts_helper'
-
 Plugin.create(:mikutter_sub_parts_image_flex) {
   UserConfig[:mikutter_sub_parts_image_flex_max_height] ||= 300
 
